@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-main class="bg-background">
-      <div class="pa-4 pb-6" style="max-width: 800px; margin: 0 auto;">
+      <div class="pa-4 pb-6" style="max-width: 800px; margin: 0 auto; width: 100%;">
         <!-- Header -->
         <div class="d-flex justify-space-between align-center mb-6">
           <v-btn icon="mdi-chevron-left" variant="text" @click="$router.back()"></v-btn>

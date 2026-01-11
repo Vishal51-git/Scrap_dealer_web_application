@@ -12,20 +12,17 @@
 
     <!-- Search -->
     <v-text-field
-      v-model="searchQuery"
+      v-model="billingStore.searchQuery"
       prepend-inner-icon="mdi-magnify"
-      :label="$t('billing_history.search_placeholder')"
+      :label="$t('billing.search_placeholder')"
       variant="outlined"
-      density="comfortable"
-      rounded="lg"
+      class="mb-6 rounded-lg bg-surface"
       hide-details
-      class="mb-4 bg-surface"
     ></v-text-field>
 
-    <!-- Stats Row -->
-    <v-row dense class="mb-4">
-      <v-col cols="6">
-        <v-card class="rounded-xl pa-3" elevation="0">
+    <v-row>
+      <v-col cols="12" sm="6">
+        <v-card class="rounded-xl pa-3" elevation="0" border>
           <v-avatar color="blue-lighten-5" rounded="lg" size="36" class="mb-2">
             <v-icon color="primary" size="20">mdi-cash</v-icon>
           </v-avatar>
@@ -33,7 +30,7 @@
           <div class="text-subtitle-1 font-weight-bold">{{ settings.formatCurrency(stats.paidToday) }}</div>
         </v-card>
       </v-col>
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <v-card class="rounded-xl pa-3" elevation="0">
           <v-avatar color="orange-lighten-5" rounded="lg" size="36" class="mb-2">
             <v-icon color="warning" size="20">mdi-clock-outline</v-icon>
@@ -45,7 +42,7 @@
     </v-row>
 
     <!-- Reports Button -->
-    <v-btn block color="primary" class="text-none mb-4 rounded-lg" size="large" prepend-icon="mdi-file-document-outline">
+    <v-btn block color="primary" class="text-none my-4 rounded-lg" size="large" prepend-icon="mdi-file-document-outline">
       {{ $t('billing_history.reports_analytics') }}
       <template v-slot:append>
         <v-icon>mdi-chevron-down</v-icon>
@@ -213,6 +210,8 @@ const settings = useSettingsStore();
 const billingStore = useBillingStore();
 const snackbar = useSnackbarStore();
 
+
+
 const searchQuery = ref('');
 const filterType = ref('All');
 
@@ -377,7 +376,7 @@ const groupedHistory = computed(() => {
         const itemCount = entry.items.length;
         const title = itemCount > 1 ? `${itemName} +${itemCount - 1}` : itemName;
         
-        grouped[key].push({
+        grouped[key]!.push({
             id: entry.id,
             title: title,
             initials: itemName.substring(0, 2).toUpperCase(),

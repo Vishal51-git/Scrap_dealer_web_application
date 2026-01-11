@@ -43,9 +43,9 @@
             hide-details="auto"
           ></v-text-field>
 
-          <div v-if="authStore.currentUser?.role === 'Super Admin'" class="text-caption font-weight-bold text-medium-emphasis mb-1">{{ $t('profile.role') }}</div>
+          <div v-if="authStore.currentUser?.role === 'super_admin'" class="text-caption font-weight-bold text-medium-emphasis mb-1">{{ $t('profile.role') }}</div>
           <v-text-field
-            v-if="authStore.currentUser?.role === 'Super Admin'"
+            v-if="authStore.currentUser?.role === 'super_admin'"
             :model-value="authStore.currentUser?.role || 'Normal User'"
             variant="outlined"
             density="compact"
@@ -84,31 +84,80 @@
           ></v-text-field>
         </v-card>
 
+
         <!-- Security -->
-        <v-btn block variant="outlined" color="primary" class="rounded-lg mb-6" prepend-icon="mdi-lock-reset">
+        <v-btn block variant="outlined" color="primary" class="rounded-lg mb-6" prepend-icon="mdi-lock-reset" @click="openPasswordDialog">
           {{ $t('profile.change_password') }}
         </v-btn>
 
-        <div class="text-center text-caption text-error cursor-pointer">
+        <div v-if="authStore.currentUser?.role === 'super_admin'" class="text-center text-caption text-error cursor-pointer">
           {{ $t('profile.delete_account') }}
         </div>
 
       </div>
     </v-main>
+
+    <!-- Change Password Dialog -->
+    <v-dialog v-model="showPasswordDialog" max-width="400">
+        <v-card class="rounded-xl">
+            <v-toolbar color="surface" density="compact">
+                <v-toolbar-title class="text-subtitle-1 font-weight-bold">Change Password</v-toolbar-title>
+                <v-btn icon="mdi-close" variant="text" @click="showPasswordDialog = false"></v-btn>
+            </v-toolbar>
+            <v-card-text class="pa-4">
+                <v-form v-model="passwordValid" @submit.prevent="changePassword">
+                    <v-text-field
+                        v-model="passwordForm.current"
+                        label="Current Password"
+                        type="password"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mb-2"
+                        :rules="[v => !!v || 'Required']"
+                    ></v-text-field>
+                    <v-text-field
+                        v-model="passwordForm.new"
+                        label="New Password"
+                        type="password"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mb-2"
+                        :rules="[v => !!v || 'Required', v => v.length >= 6 || 'Min 6 characters']"
+                    ></v-text-field>
+                    <v-text-field
+                        v-model="passwordForm.confirm"
+                        label="Confirm New Password"
+                        type="password"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mb-4"
+                        :rules="[v => !!v || 'Required', v => v === passwordForm.new || 'Passwords do not match']"
+                    ></v-text-field>
+                    
+                    <v-btn block color="primary" type="submit" :loading="changingPassword" :disabled="!passwordValid">
+                        Update Password
+                    </v-btn>
+                </v-form>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
   </v-app>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { useSnackbarStore } from '../stores/snackbar';
 
 const authStore = useAuthStore();
+const snackbar = useSnackbarStore(); // Assuming this store exists based on previous context
 const saving = ref(false);
 
 const form = reactive({
   name: authStore.currentUser?.name || 'Guest User',
   mobile: authStore.currentUser?.mobile || '',
-  email: ''
+  email: authStore.currentUser?.email || ''
 });
 
 const saveProfile = () => {
@@ -121,6 +170,39 @@ const saveProfile = () => {
         email: form.email
     });
     saving.value = false;
+    snackbar.showSnackbar('Profile updated successfully', 'success');
   }, 1000);
+};
+
+// Password Change Logic
+const showPasswordDialog = ref(false);
+const passwordValid = ref(false);
+const changingPassword = ref(false);
+const passwordForm = reactive({
+    current: '',
+    new: '',
+    confirm: ''
+});
+
+const openPasswordDialog = () => {
+    passwordForm.current = '';
+    passwordForm.new = '';
+    passwordForm.confirm = '';
+    showPasswordDialog.value = true;
+};
+
+const changePassword = async () => {
+    if (!passwordValid.value) return;
+    
+    changingPassword.value = true;
+    const success = await authStore.changePassword(passwordForm.current, passwordForm.new);
+    changingPassword.value = false;
+    
+    if (success) {
+        snackbar.showSnackbar('Password changed successfully', 'success');
+        showPasswordDialog.value = false;
+    } else {
+        snackbar.showSnackbar('Incorrect current password', 'error');
+    }
 };
 </script>

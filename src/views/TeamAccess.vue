@@ -5,9 +5,8 @@
       v-model="showModal"
       location="right"
       temporary
-      width="500"
-      class="h-100 mb-8"
-      style="z-index: 9999;"
+      :width="$vuetify.display.mobile ? '100%' : 500"
+      class="h-100"
       app
     >
       <div class="d-flex flex-column h-100 bg-surface">
@@ -95,7 +94,7 @@
       </div>
     </v-navigation-drawer>
 
-    <div class="pa-4" style="max-width: 800px; margin: 0 auto;">
+    <div class="pa-4" style="max-width: 800px; margin: 0 auto; width: 100%;">
         <!-- Header -->
         <div class="d-flex justify-space-between align-center mb-4">
           <v-btn icon="mdi-chevron-left" variant="text" @click="$router.back()"></v-btn>
@@ -198,16 +197,19 @@
 import { ref, reactive } from 'vue';
 import { useTeamStore, type TeamMember } from '../stores/team';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog.vue';
+import { useSnackbarStore } from '../stores/snackbar';
 
 const store = useTeamStore();
+const snackbar = useSnackbarStore();
 const showModal = ref(false);
 const confirmDelete = ref(false);
 const isValid = ref(false);
 const isEditing = ref(false);
 
-// Form State Interface - excludes ID for new items, but keeps permissions required
-interface FormState extends Omit<TeamMember, 'id'> {
+// Form State Interface - excludes ID and userId for new items
+interface FormState extends Omit<TeamMember, 'id' | 'userId'> {
     id?: string;
+    userId?: string;
 }
 
 const defaultItem: FormState = {
@@ -244,9 +246,11 @@ const closeModal = () => {
 const saveMember = () => {
     if (isEditing.value && editedItem.id) {
         store.updateMember(editedItem.id, editedItem);
+        snackbar.showSnackbar('Member updated successfully', 'success');
     } else {
         const { id, ...newItem } = editedItem;
         store.addMember(newItem);
+        snackbar.showSnackbar('Member added successfully', 'success');
     }
     closeModal();
 };
@@ -254,6 +258,7 @@ const saveMember = () => {
 const deleteMember = () => {
     if (editedItem.id) {
         store.removeMember(editedItem.id);
+        snackbar.showSnackbar('Access revoked successfully', 'info');
         confirmDelete.value = false;
         closeModal();
     }
@@ -268,9 +273,4 @@ const getRoleColor = (role: string) => {
     }
 };
 </script>
-<style scoped>
-.v-navigation-drawer__scrim{
-  background: none !important;
-}
-</style>
 

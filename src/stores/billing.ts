@@ -13,98 +13,90 @@ export interface BillingEntryItem {
 
 export interface BillingEntry {
   id: string;
-  date: string; // ISO string
+  userId: string; // Added userId
   vehicleNo: string;
   items: BillingEntryItem[];
   totalAmount: number;
   totalWeight: number;
+  customerName: string;
+  date: string;
   status: 'Paid' | 'Pending';
-  customerName: string; 
 }
 
+import { useAuthStore } from './auth';
+
 export const useBillingStore = defineStore('billing', () => {
-  const history = ref<BillingEntry[]>([]);
+    const allHistory = ref<BillingEntry[]>([]);
 
-  // Load from storage
-  const loadFromStorage = () => {
-    const stored = localStorage.getItem('scrap-dealer-billing');
+    // Initial Load
+    const stored = localStorage.getItem('billing_history');
     if (stored) {
-      history.value = JSON.parse(stored);
-    } else {
-        // Mock Data
-        history.value = [
-            {
-                id: '1',
-                date: new Date().toISOString(),
-                vehicleNo: 'KA-05-EA-2200',
-                items: [{ inventoryItemId: '1', name: 'Iron Scrap', grossWeight: 1250, tareWeight: 450, netWeight: 800, price: 0.5, total: 400 }],
-                totalAmount: 1250.00, // Mocked total
-                totalWeight: 800,
-                status: 'Paid',
-                customerName: 'John Doe'
-            }
-        ];
+        allHistory.value = JSON.parse(stored);
     }
-  };
+  
+    const authStore = useAuthStore();
+    const searchQuery = ref('');
 
-  const saveToStorage = () => {
-    localStorage.setItem('scrap-dealer-billing', JSON.stringify(history.value));
-  };
-
-  const addEntry = (entry: Omit<BillingEntry, 'id' | 'date' | 'status'> & { status?: 'Paid' | 'Pending' }) => {
-    const newEntry: BillingEntry = {
-      status: 'Pending', // Default
-      ...entry,
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-    };
-    history.value.unshift(newEntry); // Add to top
-    saveToStorage();
-  };
-
-  // Getters
-  const getGroupedHistory = computed(() => {
-    const grouped: Record<string, BillingEntry[]> = {};
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-
-    history.value.forEach(entry => {
-        const entryDate = new Date(entry.date).toDateString();
-        let key = entryDate;
-        if (entryDate === today) key = 'TODAY';
-        else if (entryDate === yesterday) key = 'YESTERDAY';
+    // Computed: Filtered by userId
+    const history = computed(() => {
+        if (!authStore.currentUser?.email) return [];
         
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(entry);
+        let result = allHistory.value.filter(h => h.userId === authStore.currentUser?.email);
+
+        if (searchQuery.value) {
+             const q = searchQuery.value.toLowerCase();
+             result = result.filter(h => 
+                 h.customerName.toLowerCase().includes(q) ||
+                 h.vehicleNo.toLowerCase().includes(q) ||
+                 h.status.toLowerCase().includes(q)
+             );
+        }
+        return result;
     });
-    return grouped;
-  });
 
-  const getEntryById = (id: string) => {
-    return history.value.find(e => e.id === id);
-  };
+    const syncToStorage = () => {
+        localStorage.setItem('billing_history', JSON.stringify(allHistory.value));
+    };
 
-  const deleteEntry = (id: string) => {
-    history.value = history.value.filter(e => e.id !== id);
-    saveToStorage();
-  };
+    const addEntry = (entry: Omit<BillingEntry, 'id' | 'date' | 'userId'>) => {
+        if (!authStore.currentUser?.email) return;
 
-  const updateEntry = (id: string, updatedEntry: Partial<BillingEntry>) => {
-      const index = history.value.findIndex(e => e.id === id);
-      if (index !== -1) {
-          history.value[index] = { ...history.value[index], ...updatedEntry };
-          saveToStorage();
-      }
-  };
+        const newEntry: BillingEntry = {
+            ...entry,
+            id: Date.now().toString(),
+            userId: authStore.currentUser.email,
+            date: new Date().toISOString()
+        };
+        allHistory.value.unshift(newEntry);
+        syncToStorage();
+    };
 
-  loadFromStorage();
+    const deleteEntry = (id: string) => {
+        const index = allHistory.value.findIndex(e => e.id === id);
+        if (index !== -1) {
+            allHistory.value.splice(index, 1);
+            syncToStorage();
+        }
+    };
 
-  return {
-    history,
-    addEntry,
-    getGroupedHistory,
-    getEntryById,
-    deleteEntry,
-    updateEntry
-  };
+    const updateEntry = (id: string, updates: Partial<BillingEntry>) => {
+        const index = allHistory.value.findIndex(e => e.id === id);
+        if (index !== -1) {
+             allHistory.value[index] = { ...allHistory.value[index], ...updates } as BillingEntry;
+             syncToStorage();
+        }
+    };
+
+    const getEntryById = (id: string) => {
+        return allHistory.value.find(e => e.id === id);
+    };
+
+    return {
+        history, // Expose only filtered
+        searchQuery,
+        addEntry,
+        deleteEntry,
+        getEntryById,
+        updateEntry
+    };
 });

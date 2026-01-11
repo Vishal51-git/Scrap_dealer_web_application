@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { useAuthStore } from './auth';
 
 export interface InventoryItem {
   id: string;
+  userId: string;
   name: string;
   description: string;
   price: number;
@@ -12,147 +14,101 @@ export interface InventoryItem {
   icon: string;
   color: string;
   iconColor: string;
+  lastUpdated?: string;
 }
 
 export const useInventoryStore = defineStore('inventory', () => {
-  // State
-  const items = ref<InventoryItem[]>([]);
-  const searchQuery = ref('');
-  const categoryFilter = ref('all'); // 'all', 'metal', 'paper', 'plastic', 'electronic', 'other'
+    const allItems = ref<InventoryItem[]>([]);
+    const authStore = useAuthStore();
+    const searchQuery = ref('');
+    const selectedCategory = ref('all');
 
-  // Load from localStorage on init
-  const loadFromStorage = () => {
-    const stored = localStorage.getItem('scrap-dealer-inventory');
-    if (stored) {
-      items.value = JSON.parse(stored);
-    } else {
-      // Initial mock data
-      items.value = [
-        { 
-          id: '1',
-          name: 'Iron Scrap', 
-          description: 'Heavy metal waste', 
-          price: 0.50, 
-          unit: 'kg',
-          category: 'metal',
-          quantity: 1250,
-          icon: 'mdi-hammer',
-          color: 'blue-lighten-5',
-          iconColor: 'primary'
-        },
-        { 
-          id: '2',
-          name: 'Copper Wire', 
-          description: 'Insulated wire', 
-          price: 4.20, 
-          unit: 'kg',
-          category: 'metal',
-          quantity: 340,
-          icon: 'mdi-snake',
-          color: 'orange-lighten-5',
-          iconColor: 'warning'
-        },
-        { 
-          id: '3',
-          name: 'Old Newspaper', 
-          description: 'Newspapers, books', 
-          price: 0.15, 
-          unit: 'kg',
-          category: 'paper',
-          quantity: 5000,
-          icon: 'mdi-newspaper',
-          color: 'blue-grey-lighten-5',
-          iconColor: 'blue-grey'
-        },
-        { 
-          id: '4',
-          name: 'E-Waste', 
-          description: 'PCBs, Motherboards', 
-          price: 8.50, 
-          unit: 'kg',
-          category: 'electronic',
-          quantity: 50,
-          icon: 'mdi-chip',
-          color: 'purple-lighten-5',
-          iconColor: 'purple'
-        },
-         { 
-          id: '5',
-          name: 'Plastic Bottles', 
-          description: 'PET bottles', 
-          price: 0.20, 
-          unit: 'kg',
-          category: 'plastic',
-          quantity: 800,
-          icon: 'mdi-bottle-soda',
-          color: 'cyan-lighten-5',
-          iconColor: 'cyan'
+    // Load from localStorage on init
+    const loadFromStorage = () => {
+        const stored = localStorage.getItem('inventory_items');
+        if (stored) {
+            allItems.value = JSON.parse(stored);
         }
-      ];
-      saveToStorage();
-    }
-  };
-
-  const saveToStorage = () => {
-    localStorage.setItem('scrap-dealer-inventory', JSON.stringify(items.value));
-  };
-
-  // Getters
-  const filteredItems = computed(() => {
-    return items.value.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                            item.description.toLowerCase().includes(searchQuery.value.toLowerCase());
-      const matchesFilter = categoryFilter.value === 'all' || item.category === categoryFilter.value;
-      
-      return matchesSearch && matchesFilter;
-    });
-  });
-
-  // Actions
-  const addItem = (item: Omit<InventoryItem, 'id'>) => {
-    const newItem: InventoryItem = {
-      ...item,
-      id: Date.now().toString(),
     };
-    items.value.push(newItem);
-    saveToStorage();
-  };
 
-  const updateItem = (id: string, updates: Partial<InventoryItem>) => {
-    const index = items.value.findIndex(item => item.id === id);
-    if (index !== -1) {
-      // Cast the result to InventoryItem to satisfy strict type checks
-      // knowing we are merging into an existing valid item
-      const updatedItem = { ...items.value[index], ...updates } as InventoryItem;
-      items.value[index] = updatedItem;
-      saveToStorage();
-    }
-  };
+    // Computed: Filtered by userId
+    const items = computed(() => {
+        if (!authStore.currentUser?.email) return [];
+        
+        let result = allItems.value.filter(i => i.userId === authStore.currentUser?.email);
 
-  const deleteItem = (id: string) => {
-    items.value = items.value.filter(item => item.id !== id);
-    saveToStorage();
-  };
-  
-  const updateStock = (id: string, change: number) => {
-      const index = items.value.findIndex(i => i.id === id);
-      if (index !== -1 && items.value[index]) {
-          items.value[index].quantity += change;
-          saveToStorage();
-      }
-  };
+        if (selectedCategory.value !== 'all') {
+            result = result.filter(i => i.category === selectedCategory.value);
+        }
 
-  // Initialize
-  loadFromStorage();
+        if (searchQuery.value) {
+            const q = searchQuery.value.toLowerCase();
+            result = result.filter(i => i.name.toLowerCase().includes(q));
+        }
 
-  return {
-    items,
-    searchQuery,
-    categoryFilter,
-    filteredItems,
-    addItem,
-    updateItem,
-    deleteItem,
-    updateStock
-  };
+        return result;
+    });
+
+    // Alias for compatibility if views use filteredItems
+    const filteredItems = items;
+
+    const syncToStorage = () => {
+        localStorage.setItem('inventory_items', JSON.stringify(allItems.value));
+    };
+
+    const addItem = (item: Omit<InventoryItem, 'id' | 'userId'>) => {
+        if (!authStore.currentUser?.email) return;
+
+        const newItem: InventoryItem = {
+            ...item,
+            id: Date.now().toString(),
+            userId: authStore.currentUser.email,
+            lastUpdated: new Date().toISOString()
+        };
+        allItems.value.push(newItem);
+        syncToStorage();
+    };
+
+    const updateItem = (id: string, updates: Partial<InventoryItem>) => {
+        const index = allItems.value.findIndex(i => i.id === id);
+        if (index !== -1) {
+            allItems.value[index] = { 
+                ...allItems.value[index], 
+                ...updates,
+                lastUpdated: new Date().toISOString()
+            } as InventoryItem;
+            syncToStorage();
+        }
+    };
+
+    const deleteItem = (id: string) => {
+        const index = allItems.value.findIndex(i => i.id === id);
+        if (index !== -1) {
+            allItems.value.splice(index, 1);
+            syncToStorage();
+        }
+    };
+
+    const updateStock = (id: string, change: number) => {
+        const index = allItems.value.findIndex(i => i.id === id);
+        if (index !== -1 && allItems.value[index]) {
+            allItems.value[index].quantity += change;
+            syncToStorage();
+        }
+    };
+
+    // Initialize
+    loadFromStorage();
+
+    return {
+        items,
+        filteredItems, // Expose for compatibility
+        searchQuery,
+        selectedCategory,
+        addItem,
+        updateItem,
+        deleteItem,
+        updateStock,
+        // Expose Refs for view binding if needed, though they are returned directly
+    };
 });
