@@ -23,6 +23,8 @@
         <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" exact color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-package-variant-closed" title="Inventory" to="/inventory" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-account-group" title="Team Access" to="/team" color="primary"></v-list-item>
+        <v-list-item prepend-icon="mdi-handshake" title="Dealers" to="/dealers" color="primary"></v-list-item>
+        <v-list-item v-if="authStore.currentUser?.role === 'super_admin'" prepend-icon="mdi-shield-crown" title="Super Admin" to="/super-admin" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-history" title="Billing History" to="/history" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-cog" title="Settings" to="/settings" color="primary"></v-list-item>
       </v-list>
@@ -51,7 +53,9 @@
         <v-btn variant="text" to="/" exact class="text-none font-weight-bold mr-1">Dashboard</v-btn>
         <v-btn variant="text" to="/inventory" class="text-none font-weight-bold mr-1">Inventory</v-btn>
         <v-btn variant="text" to="/history" class="text-none font-weight-bold mr-1">History</v-btn>
-        <v-btn variant="text" to="/team" class="text-none font-weight-bold">Team</v-btn>
+        <v-btn variant="text" to="/team" class="text-none font-weight-bold mr-1">Team</v-btn>
+        <v-btn variant="text" to="/dealers" class="text-none font-weight-bold mr-1">Dealers</v-btn>
+        <v-btn v-if="authStore.currentUser?.role === 'super_admin'" variant="text" to="/super-admin" class="text-none font-weight-bold">Super Admin</v-btn>
       </div>
 
       <v-spacer></v-spacer>
@@ -99,43 +103,15 @@
       </div>
     </v-footer>
 
-    <!-- Global Snackbar -->
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="snackbar.timeout"
-      location="top right"
-      variant="flat"
-      elevation="4"
-    >
-      <div class="d-flex align-center">
-        <v-icon start icon="mdi-information" class="mr-2" v-if="snackbar.color === 'info'"></v-icon>
-        <v-icon start icon="mdi-check-circle" class="mr-2" v-if="snackbar.color === 'success'"></v-icon>
-        <v-icon start icon="mdi-alert" class="mr-2" v-if="snackbar.color === 'warning'"></v-icon>
-        <v-icon start icon="mdi-alert-circle" class="mr-2" v-if="snackbar.color === 'error'"></v-icon>
-        {{ snackbar.message }}
-      </div>
 
-      <template v-slot:actions>
-        <v-btn
-          color="white"
-          variant="text"
-          icon="mdi-close"
-          size="small"
-          @click="snackbar.show = false"
-        ></v-btn>
-      </template>
-    </v-snackbar>
   </v-app>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useSnackbarStore } from '../stores/snackbar';
 import { useAuthStore } from '../stores/auth';
 
 const drawer = ref(false);
-const snackbar = useSnackbarStore();
 const authStore = useAuthStore();
 </script>
 

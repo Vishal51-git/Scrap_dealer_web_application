@@ -31,6 +31,16 @@ const routes = [
           component: () => import('../views/TeamAccess.vue'),
       },
       {
+          path: 'dealers',
+          name: 'Dealers',
+          component: () => import('../views/Dealers.vue'),
+      },
+      {
+          path: 'super-admin',
+          name: 'SuperAdmin',
+          component: () => import('../views/SuperAdmin.vue'),
+      },
+      {
           path: 'profile',
           name: 'Profile',
           component: () => import('../views/Profile.vue'),

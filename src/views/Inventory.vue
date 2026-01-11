@@ -24,11 +24,11 @@
       <v-chip
         v-for="cat in categories"
         :key="cat.value"
-        :color="store.categoryFilter === cat.value ? 'primary' : undefined"
-        :variant="store.categoryFilter === cat.value ? 'flat' : 'outlined'"
-        :class="store.categoryFilter === cat.value ? '' : 'bg-surface'"
+        :color="store.selectedCategory === cat.value ? 'primary' : undefined"
+        :variant="store.selectedCategory === cat.value ? 'flat' : 'outlined'"
+        :class="[store.selectedCategory === cat.value ? '' : 'bg-surface', 'flex-shrink-0']"
         size="large"
-        @click="store.categoryFilter = cat.value"
+        @click="store.selectedCategory = cat.value"
       >
         {{ cat.title }}
       </v-chip>
@@ -44,18 +44,24 @@
     </div>
 
     <!-- Items List -->
-    <template v-if="store.filteredItems.length > 0">
-        <v-card v-for="item in store.filteredItems" :key="item.id" class="mb-3 rounded-xl" elevation="0" border @click="openEditModal(item)">
-        <div class="d-flex align-center pa-3">
+    <template v-if="store.filteredItems && store.filteredItems.length > 0">
+        <v-card
+            v-for="item in store.filteredItems"
+            :key="item.id"
+            class="mb-3 rounded-lg pa-3 d-flex align-center"
+            elevation="0"
+            border
+            @click="openEditModal(item)"
+        >
             <!-- Icon -->
-            <v-avatar :color="item.color" class="mr-3" rounded="lg">
-            <v-icon :color="item.iconColor">{{ item.icon }}</v-icon>
+            <v-avatar :color="item.color || 'grey-lighten-4'" class="mr-4" rounded="lg">
+                <v-icon :color="item.iconColor || 'grey'">{{ item.icon || 'mdi-package-variant' }}</v-icon>
             </v-avatar>
             
             <!-- Details -->
             <div class="flex-grow-1">
-            <div class="text-subtitle-1 font-weight-bold">{{ item.name }}</div>
-            <div class="text-caption text-medium-emphasis">{{ item.description }}</div>
+                <div class="text-subtitle-1 font-weight-bold">{{ item.name }}</div>
+                <div class="text-caption text-medium-emphasis">{{ item.description }}</div>
             </div>
 
             <!-- Stock & Price -->
@@ -72,7 +78,6 @@
             </div>
             
             <v-btn icon="mdi-chevron-right" variant="text" density="compact" class="ml-1" color="grey"></v-btn>
-        </div>
         </v-card>
     </template>
     <div v-else class="text-center py-8 text-medium-emphasis">
@@ -148,8 +153,8 @@
                     variant="outlined"
                     density="comfortable"
                     class="mb-2 flex-grow-1"
-                    type="number"
-                     prefix="$"
+                     type="number"
+                     :prefix="getCurrencySymbol(settings.currency)"
                     :rules="[v => v >= 0 || 'Price must be positive']"
                 ></v-text-field>
                 
@@ -219,8 +224,9 @@ const confirmDelete = ref(false);
 const isEditing = ref(false);
 const isValid = ref(false);
 
-interface FormState extends Omit<InventoryItem, 'id'> {
+interface FormState extends Omit<InventoryItem, 'id' | 'userId'> {
     id?: string;
+    userId?: string;
 }
 
 const defaultItem: FormState = {
@@ -289,6 +295,17 @@ const deleteItem = () => {
         store.deleteItem(editedItem.id);
         confirmDelete.value = false;
         closeModal();
+    }
+};
+
+
+const getCurrencySymbol = (code: string) => {
+    switch(code) {
+        case 'INR': return '₹';
+        case 'USD': return '$';
+        case 'EUR': return '€';
+        case 'GBP': return '£';
+        default: return code;
     }
 };
 

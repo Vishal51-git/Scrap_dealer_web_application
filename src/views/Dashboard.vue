@@ -3,7 +3,7 @@
     <!-- Welcome Section -->
     <div class="mb-6">
       <h1 class="text-h5 font-weight-bold mb-1">
-        {{ $t('dashboard.greeting') }}{{ authStore.currentUser?.name ? `, ${authStore.currentUser.name}` : '' }}
+        {{ currentGreeting }}{{ authStore.currentUser?.name ? `, ${authStore.currentUser.name}` : '' }}
       </h1>
       <p class="text-body-2 text-medium-emphasis">{{ $t('dashboard.summary') }}</p>
     </div>
@@ -41,7 +41,7 @@
 
     <!-- Summary Cards -->
     <v-row dense class="mb-6">
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <v-card class="rounded-xl pa-3" elevation="0">
           <div class="d-flex justify-space-between align-start mb-2">
             <v-avatar color="blue-lighten-5" rounded="lg" size="40">
@@ -54,7 +54,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <v-card class="rounded-xl pa-3 bg-primary text-white" elevation="0">
           <div class="d-flex justify-space-between align-start mb-2">
             <v-avatar color="white" rounded="lg" size="40" variant="tonal">
@@ -67,7 +67,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <v-card class="rounded-xl pa-3" elevation="0">
           <div class="d-flex justify-space-between align-start mb-2">
             <v-avatar color="green-lighten-5" rounded="lg" size="40">
@@ -80,7 +80,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="6">
+      <v-col cols="12" sm="6">
         <v-card class="rounded-xl pa-3" elevation="0">
           <div class="d-flex justify-space-between align-start mb-2">
             <v-avatar color="orange-lighten-5" rounded="lg" size="40">
@@ -312,6 +312,17 @@ const recentActivity = computed(() => {
             id: entry.id
         };
     });
+});
+
+const currentGreeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return t('dashboard.greeting_morning');
+  } else if (hour >= 12 && hour < 17) {
+    return t('dashboard.greeting_afternoon');
+  } else {
+    return t('dashboard.greeting_evening');
+  }
 });
 </script>
 

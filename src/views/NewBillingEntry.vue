@@ -1,13 +1,32 @@
 <template>
   <v-app>
     <v-main class="bg-background">
-      <div class="pa-4 pb-16" style="padding-bottom: 160px !important; max-width: 600px; margin: 0 auto;">
+      <v-container class="pa-4 pb-16" style="padding-bottom: 160px !important; max-width: 800px;">
         <!-- Header -->
         <div class="d-flex justify-space-between align-center mb-4">
           <v-btn icon="mdi-close" variant="text" size="small" class="bg-surface-light rounded-circle" @click="$router.back()"></v-btn>
           <h1 class="text-h6 font-weight-bold">{{ editingId ? 'Edit Billing Entry' : $t('new_billing.title') }}</h1>
           <v-btn variant="text" color="primary" class="font-weight-bold text-none" @click="clearForm">{{ $t('new_billing.clear') }}</v-btn>
         </div>
+
+        <!-- Dealer Selection -->
+        <div class="d-flex align-center text-primary font-weight-bold mb-3">
+          <v-icon class="mr-2">mdi-account-tie</v-icon> {{ $t('new_billing.dealer_details') || 'Dealer Details' }}
+        </div>
+        <v-card class="rounded-xl pa-4 mb-6 border" elevation="0">
+             <v-autocomplete
+                v-model="selectedDealer"
+                :items="dealerOptions"
+                label="Select Dealer (Optional)"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                bg-color="surface-light"
+                class="font-weight-bold mb-3"
+                clearable
+                @update:model-value="onDealerSelect"
+            ></v-autocomplete>
+        </v-card>
 
         <!-- Vehicle Details -->
         <div class="d-flex align-center text-primary font-weight-bold mb-3">
@@ -16,15 +35,17 @@
         
         <v-card class="rounded-xl pa-4 mb-6 border" elevation="0">
           <div class="text-caption font-weight-bold text-medium-emphasis mb-2 text-uppercase">{{ $t('new_billing.vehicle_number') }}</div>
-          <v-text-field
+          <v-combobox
             v-model="vehicleNo"
-            @update:model-value="val => vehicleNo = val.toUpperCase()"
+            :items="vehicleOptions"
+            @update:model-value="val => vehicleNo = (val || '').toUpperCase()"
             variant="filled"
             bg-color="surface-light"
             rounded="lg"
             hide-details
             placeholder="KA01AB1234"
             class="font-weight-bold font-monospace"
+            :return-object="false"
           >
             <template v-slot:prepend-inner>
               <v-chip size="x-small" label class="mr-2 font-weight-bold text-medium-emphasis">IND</v-chip>
@@ -32,7 +53,7 @@
             <template v-slot:append-inner>
               <v-icon color="success">mdi-check-circle</v-icon>
             </template>
-          </v-text-field>
+          </v-combobox>
         </v-card>
 
         <!-- Multi-Item Switch & Payment Switch -->
@@ -102,7 +123,7 @@
             ></v-select>
 
             <v-row dense class="mb-2">
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                 <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase mb-1">{{ $t('new_billing.gross_kg') }}</div>
                 <v-text-field
                     v-model.number="item.grossWeight"
@@ -115,7 +136,7 @@
                     class="font-weight-bold"
                 ></v-text-field>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                 <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase mb-1">{{ $t('new_billing.tare_kg') }}</div>
                 <v-text-field
                     v-model.number="item.tareWeight"
@@ -150,24 +171,26 @@
         </v-btn>
 
         <!-- Footer Action -->
-        <div class="position-fixed bg-surface border-t mb-10 pa-4 w-50 mx-auto" style="bottom: 0; left: 25%; z-index: 200;">
-          <div class="d-flex justify-space-between align-end mb-3">
-            <div>
-              <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ $t('new_billing.total_net_weight') }}</div>
-              <div class="text-h5 font-weight-bold text-high-emphasis" style="line-height:1;">{{ totalNetWeight }} <span class="text-body-1 font-weight-bold text-medium-emphasis">kg</span></div>
-            </div>
-            <div class="text-right">
-              <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ $t('new_billing.total_items') }}</div>
-               <div class="text-h5 font-weight-bold text-high-emphasis" style="line-height:1;">{{ totalItems }}</div>
-            </div>
-          </div>
-          
-          <v-btn block color="primary" size="large" rounded="lg" prepend-icon="mdi-receipt-text" @click="generateBill">
-            {{ editingId ? 'Update Generated Bill' : $t('new_billing.generate_bill') }}
-          </v-btn>
+        <div class="position-fixed bg-surface border-t pa-4 mb-10 w-100" style="bottom: 0; left: 0; z-index: 200;">
+           <div class="mx-auto" style="max-width: 800px;">
+              <div class="d-flex justify-space-between align-end mb-3">
+                <div>
+                  <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ $t('new_billing.total_net_weight') }}</div>
+                  <div class="text-h5 font-weight-bold text-high-emphasis" style="line-height:1;">{{ totalNetWeight }} <span class="text-body-1 font-weight-bold text-medium-emphasis">kg</span></div>
+                </div>
+                <div class="text-right">
+                  <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ $t('new_billing.total_items') }}</div>
+                   <div class="text-h5 font-weight-bold text-high-emphasis" style="line-height:1;">{{ totalItems }}</div>
+                </div>
+              </div>
+              
+              <v-btn block color="primary" size="large" rounded="lg" prepend-icon="mdi-receipt-text" @click="generateBill">
+                {{ editingId ? 'Update Generated Bill' : $t('new_billing.generate_bill') }}
+              </v-btn>
+           </div>
         </div>
 
-      </div>
+      </v-container>
     </v-main>
   </v-app>
 </template>
@@ -178,15 +201,51 @@ import { useInventoryStore } from '../stores/inventory';
 import { useRouter, useRoute } from 'vue-router';
 import { useBillingStore } from '../stores/billing';
 import { useSnackbarStore } from '../stores/snackbar';
+import { useDealerStore } from '../stores/dealer';
 
 const router = useRouter();
 const route = useRoute();
 const inventoryStore = useInventoryStore();
 const billingStore = useBillingStore();
 const snackbar = useSnackbarStore();
+const dealerStore = useDealerStore();
 
 const vehicleNo = ref('KA01AB1234');
 const editingId = ref<string | null>(null);
+const selectedDealer = ref<string | null>(null);
+
+const dealerOptions = computed(() => {
+    return dealerStore.dealers.map(d => ({
+        title: d.dealerName + (d.firmName ? ` (${d.firmName})` : ''),
+        value: d.id,
+        vehicles: d.vehicles,
+        name: d.dealerName 
+    }));
+});
+
+const vehicleOptions = computed(() => {
+    if (selectedDealer.value) {
+        const dealer = dealerStore.getDealerById(selectedDealer.value);
+        return dealer ? dealer.vehicles : [];
+    }
+    return [];
+});
+
+const onDealerSelect = () => {
+   // Clear vehicle if dealer changes, or maybe keep it? Let's clear for now to avoid confusion
+   // unless the current vehicle is in the new dealer's list.
+   if (selectedDealer.value) {
+       const dealer = dealerStore.getDealerById(selectedDealer.value);
+       if (dealer && dealer.vehicles.length > 0) {
+            // Check if current vehicle is in the list
+           if (!dealer.vehicles.includes(vehicleNo.value)) {
+               vehicleNo.value = dealer.vehicles[0] || ''; // Default to first
+           }
+       } else {
+           vehicleNo.value = '';
+       }
+   }
+};
 
 interface BillingItem {
   id: number;
@@ -212,7 +271,7 @@ const inventoryOptions = computed(() => {
 const isPaid = ref(false);
 const showPaymentConfirm = ref(false);
 
-const handlePaymentSwitch = (val: boolean | null) => {
+const handlePaymentSwitch = () => {
     // val is the new value. If it's becoming true (Paid), verify.
     // However, v-switch v-model updates the value directly.
     // So if isPaid is true, it means user just switched it ON.
@@ -291,12 +350,17 @@ const clearForm = () => {
     billingItems.value = [{ id: Date.now(), inventoryItemId: null, grossWeight: null, tareWeight: null }];
     vehicleNo.value = '';
     editingId.value = null;
+    selectedDealer.value = null;
     isPaid.value = false;
     router.replace({ query: {} }); // remove query param
 };
 
 const generateBill = () => {
     // Validate
+    if (!vehicleNo.value) {
+        snackbar.showSnackbar('Vehicle Number is required', 'warning');
+        return;
+    }
     if (billingItems.value.some(i => !i.inventoryItemId || !i.grossWeight || !i.tareWeight)) {
         snackbar.showSnackbar('Please fill in all item details', 'warning');
         return;
@@ -335,7 +399,9 @@ const generateBill = () => {
             items: itemsPayload,
             totalAmount: totalAmount,
             totalWeight: totalNetWeight.value,
-            customerName: 'Guest Customer',
+            customerName: selectedDealer.value ? 
+                (dealerStore.getDealerById(selectedDealer.value)?.dealerName || 'Guest Customer') : 
+                'Guest Customer',
             status: status
         });
         snackbar.showSnackbar('Bill Generated Successfully!', 'success');

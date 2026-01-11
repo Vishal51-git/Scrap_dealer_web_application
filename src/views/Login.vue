@@ -7,25 +7,42 @@
           <v-icon color="primary" size="48">mdi-recycle</v-icon>
         </v-card>
 
-        <h1 class="text-h4 font-weight-bold text-primary mb-2">{{ $t('login.title') }}</h1>
+        <h1 class="text-h4 font-weight-bold text-primary mb-2">Welcome Back</h1>
         <p class="text-body-1 text-medium-emphasis text-center mb-8 px-4" style="max-width: 320px;">
           {{ $t('login.subtitle') }}
         </p>
 
-        <!-- Step 1: Mobile Number -->
-        <div v-if="step === 1" class="w-100" style="max-width: 360px;">
-          <div class="text-subtitle-2 font-weight-bold mb-2 ml-1">{{ $t('login.mobile_number') }}</div>
+        <!-- Login Form -->
+        <div class="w-100 px-4" style="max-width: 360px;">
+          <v-form v-model="form" @submit.prevent="handleLogin">
+          <div class="text-subtitle-2 font-weight-bold mb-2 ml-1">Email Address</div>
           <v-text-field
-            v-model="mobile"
-            placeholder="e.g. 98765 43210"
+            v-model="email"
+            :rules="emailRules"
+            placeholder="name@example.com"
             variant="outlined"
             bg-color="surface"
             rounded="lg"
-            hide-details
+            class="mb-4"
+          >
+            <template v-slot:append-inner>
+              <v-icon color="medium-emphasis">mdi-email</v-icon>
+            </template>
+          </v-text-field>
+
+          <div class="text-subtitle-2 font-weight-bold mb-2 ml-1">Password</div>
+           <v-text-field
+            v-model="password"
+            :rules="passwordRules"
+            placeholder="Type your password"
+            variant="outlined"
+            bg-color="surface"
+            rounded="lg"
+            type="password"
             class="mb-6"
           >
             <template v-slot:append-inner>
-              <v-icon color="medium-emphasis">mdi-cellphone</v-icon>
+              <v-icon color="medium-emphasis">mdi-lock</v-icon>
             </template>
           </v-text-field>
 
@@ -35,35 +52,19 @@
             size="large"
             rounded="lg"
             class="text-none mb-6"
-            @click="step = 2"
+            type="submit"
+            :loading="loading"
+            :disabled="!form"
           >
-            {{ $t('login.request_otp') }} <v-icon end>mdi-arrow-right</v-icon>
+            Login <v-icon end>mdi-arrow-right</v-icon>
           </v-btn>
-
-          <div class="d-flex align-center w-100 my-4">
-            <v-divider></v-divider>
-            <span class="text-caption text-medium-emphasis mx-4">{{ $t('login.verification') }}</span>
-            <v-divider></v-divider>
-          </div>
+          </v-form>
+          
+           <div class="text-center">
+             <span class="text-caption text-medium-emphasis">Don't have an account? </span>
+             <v-btn variant="text" density="compact" class="px-1 text-none font-weight-bold" color="primary" to="/register">Create Account</v-btn>
+           </div>
         </div>
-
-        <!-- Step 2: OTP Verification -->
-        <v-card v-if="step === 2" class="w-100 pa-4 rounded-xl" style="max-width: 360px;" border elevation="0">
-          <div class="d-flex justify-space-between align-center mb-4">
-            <span class="text-subtitle-2 font-weight-bold">{{ $t('login.enter_otp') }}</span>
-            <span class="text-caption text-primary">{{ $t('login.sent_to') }} ******{{ mobile.slice(-3) }}</span>
-          </div>
-
-          <div class="d-flex justify-center mb-4 bg-surface-light rounded-lg pa-4 border align-center" style="letter-spacing: 8px; font-weight: bold; font-size: 1.2rem;">
-            - - - - - -
-            <v-icon size="small" color="grey" class="ml-2">mdi-lock</v-icon>
-          </div>
-
-          <div class="d-flex justify-space-between align-center">
-            <span class="text-caption text-medium-emphasis">{{ $t('login.resend_in') }} 00:24</span>
-            <v-btn color="primary" class="text-none px-6" rounded="lg" to="/">{{ $t('login.verify') }}</v-btn>
-          </div>
-        </v-card>
 
         <!-- Footer -->
         <div class="d-flex align-center text-caption text-medium-emphasis mt-12 bg-transparent">
@@ -77,7 +78,43 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { useRouter } from 'vue-router';
+import { useSnackbarStore } from '../stores/snackbar';
 
-const step = ref(1);
-const mobile = ref('');
+const authStore = useAuthStore();
+const router = useRouter();
+const snackbar = useSnackbarStore();
+
+const email = ref('');
+const password = ref('');
+const loading = ref(false);
+
+
+const form = ref(false);
+const emailRules = [
+    (v: string) => !!v || 'Email is required',
+    (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Invalid email address'
+];
+const passwordRules = [
+    (v: string) => !!v || 'Password is required'
+];
+
+const handleLogin = async () => {
+    if (!form.value) return; 
+
+    loading.value = true;
+
+    try {
+        const success = await authStore.login(email.value, password.value);
+        if (success) {
+            snackbar.showSnackbar('Login Successful', 'success');
+            router.push('/');
+        } else {
+            snackbar.showSnackbar('Invalid credentials. For Super Admin use superadmin@gmail.com / admin123', 'error');
+        }
+    } finally {
+        loading.value = false;
+    }
+};
 </script>
