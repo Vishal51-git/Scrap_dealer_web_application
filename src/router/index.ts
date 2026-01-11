@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   {
@@ -72,6 +73,20 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const publicPages = ['Registration', 'Login', 'ForgotPassword']
+  const authRequired = !publicPages.includes(to.name as string)
+
+  if (authRequired && !authStore.isAuthenticated) {
+    next({ name: 'Registration' })
+  } else if (authStore.isAuthenticated && (to.name === 'Login' || to.name === 'Registration')) {
+    next({ name: 'Dashboard' })
+  } else {
+    next()
+  }
 })
 
 export default router
