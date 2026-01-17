@@ -50,8 +50,19 @@ const routes = [
           name: 'NewBilling',
           component: () => import('../views/NewBillingEntry.vue'),
       },
+      {
+          path: 'billing/generate',
+          name: 'GenerateBill',
+          component: () => import('../views/GenerateBill.vue'),
+      },
+      {
+          path: 'reports',
+          name: 'ReportsAnalytics',
+          component: () => import('../views/ReportsAnalytics.vue'),
+      },
     ],
   },
+
   {
       path: '/register',
       name: 'Registration',
@@ -69,9 +80,26 @@ const routes = [
   },
 ]
 
+
+import { useAuthStore } from '../stores/auth'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const publicPages = ['/register', '/login', '/forgot-password']
+  const authRequired = !publicPages.includes(to.path)
+
+  if (authRequired && !authStore.isAuthenticated) {
+    next('/register')
+  } else if (authStore.isAuthenticated && publicPages.includes(to.path)) {
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

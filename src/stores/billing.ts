@@ -2,25 +2,61 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 export interface BillingEntryItem {
-  inventoryItemId: string;
+  inventoryItemId: string | null; // Changed to nullable as ad-hoc items allowed? Actually let's keep string but handle nulls in UI
   name: string;
-  grossWeight: number;
-  tareWeight: number;
-  netWeight: number;
-  price: number;
+  hsn?: string;
+  grossWeight?: number;
+  tareWeight?: number;
+  netWeight?: number;
+  qty: number;
+  price: number; // Rate
+  discount?: number;
+  taxableValue?: number;
+  cgstRate?: number;
+  cgstAmount?: number;
+  sgstRate?: number;
+  sgstAmount?: number;
+  igstRate?: number;
+  igstAmount?: number;
   total: number;
 }
 
 export interface BillingEntry {
   id: string;
-  userId: string; // Added userId
+  userId: string;
   vehicleNo: string;
   items: BillingEntryItem[];
   totalAmount: number;
   totalWeight: number;
   customerName: string;
   date: string;
-  status: 'Paid' | 'Pending';
+  status: 'Paid' | 'Pending' | 'Draft';
+  
+  // Extended Invoice Fields (Optional)
+  consignee?: {
+      name: string;
+      address: string;
+      gst?: string;
+      state?: string;
+  };
+  invoiceDetails?: {
+      invoiceNo?: string;
+      reverseCharge?: boolean;
+      transportMode?: string;
+      dateOfSupply?: string;
+      placeOfSupply?: string;
+  };
+  taxDetails?: {
+      cgst: number;
+      sgst: number;
+      igst: number;
+  };
+  bankDetails?: {
+      bankName: string;
+      accountNo: string;
+      ifsc: string;
+      branch: string;
+  };
 }
 
 import { useAuthStore } from './auth';
@@ -38,10 +74,13 @@ export const useBillingStore = defineStore('billing', () => {
     const searchQuery = ref('');
 
     // Computed: Filtered by userId
-    const history = computed(() => {
+    const userHistory = computed(() => {
         if (!authStore.currentUser?.email) return [];
-        
-        let result = allHistory.value.filter(h => h.userId === authStore.currentUser?.email);
+        return allHistory.value.filter(h => h.userId === authStore.currentUser?.email);
+    });
+
+    const history = computed(() => {
+        let result = userHistory.value;
 
         if (searchQuery.value) {
              const q = searchQuery.value.toLowerCase();
@@ -92,7 +131,8 @@ export const useBillingStore = defineStore('billing', () => {
     };
 
     return {
-        history, // Expose only filtered
+        history, 
+        userHistory, // Added
         searchQuery,
         addEntry,
         deleteEntry,

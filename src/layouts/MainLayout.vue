@@ -24,6 +24,7 @@
         <v-list-item prepend-icon="mdi-package-variant-closed" title="Inventory" to="/inventory" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-account-group" title="Team Access" to="/team" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-handshake" title="Dealers" to="/dealers" color="primary"></v-list-item>
+        <v-list-item prepend-icon="mdi-receipt-text-plus" title="Generate Invoice" to="/billing/generate" color="primary"></v-list-item>
         <v-list-item v-if="authStore.currentUser?.role === 'super_admin'" prepend-icon="mdi-shield-crown" title="Super Admin" to="/super-admin" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-history" title="Billing History" to="/history" color="primary"></v-list-item>
         <v-list-item prepend-icon="mdi-cog" title="Settings" to="/settings" color="primary"></v-list-item>
@@ -31,7 +32,7 @@
       
        <template v-slot:append>
         <div class="pa-4">
-          <v-btn block variant="tonal" color="error" rounded="lg" to="/login">
+          <v-btn block variant="tonal" color="error" rounded="lg" @click="handleLogout">
             <v-icon start>mdi-logout</v-icon> Logout
           </v-btn>
         </div>
@@ -55,6 +56,7 @@
         <v-btn variant="text" to="/history" class="text-none font-weight-bold mr-1">History</v-btn>
         <v-btn variant="text" to="/team" class="text-none font-weight-bold mr-1">Team</v-btn>
         <v-btn variant="text" to="/dealers" class="text-none font-weight-bold mr-1">Dealers</v-btn>
+        <v-btn variant="text" to="/billing/generate" class="text-none font-weight-bold mr-1">Generate Bill</v-btn>
         <v-btn v-if="authStore.currentUser?.role === 'super_admin'" variant="text" to="/super-admin" class="text-none font-weight-bold">Super Admin</v-btn>
       </div>
 
@@ -77,7 +79,7 @@
             <v-list-item prepend-icon="mdi-account" title="Profile" to="/profile" density="compact"></v-list-item>
             <v-list-item prepend-icon="mdi-cog" title="Settings" to="/settings" density="compact"></v-list-item>
             <v-divider class="my-2"></v-divider>
-            <v-list-item prepend-icon="mdi-logout" title="Logout" to="/login" density="compact" color="error"></v-list-item>
+            <v-list-item prepend-icon="mdi-logout" title="Logout" @click="handleLogout" density="compact" color="error"></v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -109,10 +111,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
 const drawer = ref(false);
 const authStore = useAuthStore();
+const router = useRouter();
+
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/login');
+};
 </script>
 
 <style scoped>

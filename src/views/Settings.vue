@@ -143,7 +143,7 @@
         </v-card>
 
         <!-- Logout -->
-        <v-btn block color="surface" border class="text-error" size="large" rounded="lg" to="/login">
+        <v-btn block color="surface" border class="text-error" size="large" rounded="lg" @click="handleLogout">
           <v-icon start>mdi-logout</v-icon>
           {{ $t('settings.logout') }}
         </v-btn>
@@ -162,11 +162,18 @@ import { useSettingsStore } from '../stores/settings';
 import { useAuthStore } from '../stores/auth';
 import { useTheme } from 'vuetify';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
 const settings = useSettingsStore();
 const authStore = useAuthStore();
 const theme = useTheme();
 const { locale } = useI18n();
+const router = useRouter();
+
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/login');
+};
 
 const notifications = ref(true);
 

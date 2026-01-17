@@ -154,9 +154,21 @@
                     density="comfortable"
                     class="mb-2 flex-grow-1"
                      type="number"
-                     :prefix="getCurrencySymbol(settings.currency)"
+                     :prefix="settings.currency === 'INR' ? '₹' : (settings.currency === 'USD' ? '$' : '€')"
                     :rules="[v => v >= 0 || 'Price must be positive']"
                 ></v-text-field>
+
+                <v-text-field
+                   v-model="editedItem.hsn"
+                    label="HSN Code"
+                   variant="outlined"
+                   density="comfortable"
+                   class="mb-2 mr-2"
+                   style="max-width: 120px;"
+                   :rules="[v => !v || /^\d{4}$/.test(v) || '4 digits']"
+                   @input="(e: any) => editedItem.hsn = e.target.value.replace(/\D/g, '')"
+                   maxlength="4"
+               ></v-text-field>
                 
                  <v-text-field
                     v-model="editedItem.unit"
@@ -167,6 +179,17 @@
                     style="max-width: 100px;"
                 ></v-text-field>
             </div>
+
+            <v-text-field
+                v-model.number="editedItem.gstRate"
+                label="GST Rate (%)"
+                variant="outlined"
+                density="comfortable"
+                class="mb-2"
+                type="number"
+                :hint="editedItem.gstRate ? `Total GST (${editedItem.gstRate}% = ${editedItem.gstRate/2}% CGST + ${editedItem.gstRate/2}% SGST)` : 'Total GST (e.g. 18 for 9% CGST + 9% SGST)'"
+                persistent-hint
+            ></v-text-field>
             
              <v-text-field
                 v-model.number="editedItem.quantity"
@@ -238,7 +261,9 @@ const defaultItem: FormState = {
     quantity: 0,
     icon: 'mdi-package-variant',
     color: 'grey-lighten-5',
-    iconColor: 'grey'
+    iconColor: 'grey',
+    gstRate: 18,
+    hsn: ''
 };
 
 const editedItem = reactive<FormState>({ ...defaultItem });
@@ -299,15 +324,7 @@ const deleteItem = () => {
 };
 
 
-const getCurrencySymbol = (code: string) => {
-    switch(code) {
-        case 'INR': return '₹';
-        case 'USD': return '$';
-        case 'EUR': return '€';
-        case 'GBP': return '£';
-        default: return code;
-    }
-};
+
 
 </script>
 

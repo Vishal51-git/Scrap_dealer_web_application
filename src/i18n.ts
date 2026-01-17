@@ -53,16 +53,28 @@ const messages = {
       loading_weather: 'Loading weather...',
       location_denied: 'Location access denied',
     },
+    reports: {
+      title: 'Analytics Dashboard',
+      total_revenue: 'Total Revenue',
+      total_weight: 'Total Weight',
+      total_bills: 'Total Bills',
+      avg_ticket: 'Avg. Ticket Size',
+      revenue_trend: 'Revenue Trend',
+      material_split: 'Material Split',
+      top_performers: 'Top Performers',
+    },
     billing_history: {
       title: 'Billing History',
       search_placeholder: 'Search name, vehicle no, or material...',
       paid_today: 'Paid Today',
       pending_invoices: 'Pending Invoices',
+      draft_invoices: 'Draft Invoices',
       reports_analytics: 'Reports & Analytics',
       filters: {
         all: 'All',
         date_range: 'Date Range',
         item_type: 'Item Type',
+        draft: 'Draft',
       }
     },
     forgot_password: {
@@ -117,6 +129,13 @@ const messages = {
       total_net_weight: 'TOTAL NET WEIGHT',
       total_items: 'TOTAL ITEMS',
       generate_bill: 'Generate Bill',
+      dealer_details: 'Dealer Details',
+      select_item_placeholder: 'Select Item',
+      select_dealer_placeholder: 'Select Dealer',
+      select_vehicle_placeholder: 'Select Vehicle',
+      select_dealer: 'Select Dealer',
+      select_vehicle: 'Select Vehicle',
+      select_item: 'Select Item',
     },
     team: {
       title: 'Team & Access',
@@ -186,6 +205,7 @@ const messages = {
       add_new_dealer: 'Add New Dealer',
       dealer_name: 'Dealer Name',
       firm_name: 'Firm Name',
+      firm_address: 'Firm Address',
       gst_number: 'GST Number',
       vehicles: 'Vehicles',
       actions: 'Actions',
@@ -265,11 +285,13 @@ const messages = {
       search_placeholder: 'नाम, वाहन संख्या, या सामग्री खोजें...',
       paid_today: 'आज भुगतान किया गया',
       pending_invoices: 'लंबित चालान',
+      draft_invoices: 'ड्राफ्ट चालान',
       reports_analytics: 'रिपोर्ट और एनालिटिक्स',
       filters: {
         all: 'सभी',
         date_range: 'दिनांक सीमा',
         item_type: 'आइटम प्रकार',
+        draft: 'ड्राफ्ट',
       }
     },
     forgot_password: {
@@ -393,6 +415,7 @@ const messages = {
       add_new_dealer: 'नया डीलर जोड़ें',
       dealer_name: 'डीलर का नाम',
       firm_name: 'फर्म का नाम',
+      firm_address: 'फर्म का पता',
       gst_number: 'जीएसटी नंबर',
       vehicles: 'वाहन',
       actions: 'कार्रवाई',
