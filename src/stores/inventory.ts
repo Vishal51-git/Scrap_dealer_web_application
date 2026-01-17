@@ -14,6 +14,8 @@ export interface InventoryItem {
   icon: string;
   color: string;
   iconColor: string;
+  hsn?: string;
+  gstRate?: number;
   lastUpdated?: string;
 }
 

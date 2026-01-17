@@ -50,8 +50,19 @@ const routes = [
           name: 'NewBilling',
           component: () => import('../views/NewBillingEntry.vue'),
       },
+      {
+          path: 'billing/generate',
+          name: 'GenerateBill',
+          component: () => import('../views/GenerateBill.vue'),
+      },
+      {
+          path: 'reports',
+          name: 'ReportsAnalytics',
+          component: () => import('../views/ReportsAnalytics.vue'),
+      },
     ],
   },
+
   {
       path: '/register',
       name: 'Registration',

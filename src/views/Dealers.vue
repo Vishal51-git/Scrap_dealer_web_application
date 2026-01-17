@@ -34,6 +34,10 @@
           </v-toolbar>
         </template>
 
+        <template v-slot:item.dealerName="{ item }">
+          {{ item.title ? `${item.title} ` : '' }}{{ item.dealerName }}
+        </template>
+
         <template v-slot:item.vehicles="{ item }">
           <v-chip-group>
             <v-chip v-for="vehicle in item.vehicles" :key="vehicle" size="x-small" label class="mr-1">
@@ -59,7 +63,7 @@
     </v-card>
 
     <!-- Add/Edit Dialog -->
-    <v-dialog v-model="dialog" :max-width="$vuetify.display.mobile ? '100%' : '600px'" persistent>
+    <v-dialog v-model="dialog" :max-width="$vuetify.display.mobile ? '100%' : '600px'" persistent scrollable>
       <v-card class="rounded-lg">
         <v-card-title class="pa-4 d-flex align-center justify-space-between bg-primary text-white">
           <span class="text-h6">{{ form.id ? t('dealers.edit_dealer') : t('dealers.add_new_dealer') }}</span>
@@ -69,7 +73,16 @@
         <v-card-text class="pa-4 pt-6">
           <v-form ref="formRef" v-model="valid" @submit.prevent="saveDealer">
             <v-row>
-              <v-col cols="12" sm="6">
+              <v-col cols="12" sm="3">
+                <v-select
+                  v-model="form.title"
+                  :items="titleOptions"
+                  label="Title"
+                  variant="outlined"
+                  hide-details="auto"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" sm="9">
                 <v-text-field
                   v-model="form.dealerName"
                   :label="t('dealers.dealer_name')"
@@ -78,7 +91,7 @@
                   required
                 ></v-text-field>
               </v-col>
-              <v-col cols="12" sm="6">
+              <v-col cols="12" sm="12">
                 <v-text-field
                   v-model="form.firmName"
                   :label="t('dealers.firm_name')"
@@ -92,18 +105,35 @@
                   v-model="form.mobile"
                   label="Mobile Number"
                   variant="outlined"
-                  :rules="[v => !!v || 'Mobile is required', v => /^\d{10}$/.test(v) || 'Mobile must be 10 digits']"
+                  type="number" 
+                  :rules="[v => !!v || 'Mobile is required', v => /^\d+$/.test(v) || 'Numeric only', v => v.length === 10 || 'Mobile must be 10 digits']"
                   required
                 ></v-text-field>
               </v-col>
-              <v-col cols="12" sm="12">
+               <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="form.gstNumber"
                   :label="t('dealers.gst_number')"
                   variant="outlined"
-                  :rules="[v => !!v || 'GST Number is required']"
+                  @input="upperCaseGST"
+                  :rules="[
+                    v => !!v || 'GST Number is required', 
+                    v => v.length <= 15 || 'Max 15 characters',
+                    v => /^[0-9A-Z]+$/.test(v) || 'Capital letters and numbers only',
+                     v => v.length === 15 || 'GST Number must be 15 chars'
+                  ]"
                   required
+                  counter="15"
                 ></v-text-field>
+              </v-col>
+               <v-col cols="12" sm="12">
+                <v-textarea
+                  v-model="form.address"
+                  :label="t('dealers.firm_address')"
+                  variant="outlined"
+                  rows="2"
+                  auto-grow
+                ></v-textarea>
               </v-col>
             </v-row>
 
@@ -122,7 +152,9 @@
                      :label="t('dealers.vehicle_number')"
                      variant="outlined"
                      density="compact"
-                     hide-details
+                     hide-details="auto" 
+                     @input="upperCaseVehicle(index, $event)"
+                     :rules="[v => !v || v.length === 10 || 'Must be 10 chars']"
                      bg-color="surface"
                    ></v-text-field>
                  </v-col>
@@ -185,25 +217,32 @@ const formRef = ref<any>(null);
 const headers = computed(() => [
   { title: t('dealers.dealer_name'), key: 'dealerName', align: 'start' },
   { title: t('dealers.firm_name'), key: 'firmName' },
+  { title: t('dealers.firm_address'), key: 'address' },
   { title: t('dealers.gst_number'), key: 'gstNumber' },
   { title: t('dealers.vehicles'), key: 'vehicles', sortable: false },
   { title: t('dealers.actions'), key: 'actions', sortable: false, align: 'end' },
 ] as const);
 
+const titleOptions = ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'M/s'];
+
 // Form State
 const form = reactive<{
   id: string | null;
+  title: string; // Added
   dealerName: string;
   firmName: string;
   mobile: string;
   gstNumber: string;
+  address: string; 
   vehicles: string[];
 }>({
   id: null,
+  title: 'Mr.', // Default
   dealerName: '',
   firmName: '',
   mobile: '',
   gstNumber: '',
+  address: '', 
   vehicles: [],
 });
 
@@ -212,10 +251,12 @@ const itemToDelete = ref<Dealer | null>(null);
 const openDialog = (item?: Dealer) => {
   if (item) {
     form.id = item.id;
+    form.title = item.title || 'Mr.';
     form.dealerName = item.dealerName;
     form.firmName = item.firmName;
     form.mobile = item.mobile || '';
     form.gstNumber = item.gstNumber;
+    form.address = item.address || ''; 
     form.vehicles = [...item.vehicles];
   } else {
     resetForm();
@@ -232,10 +273,12 @@ const closeDialog = () => {
 
 const resetForm = () => {
   form.id = null;
+  form.title = 'Mr.'; // Reset to default
   form.dealerName = '';
   form.firmName = '';
   form.mobile = '';
   form.gstNumber = '';
+  form.address = ''; 
   form.vehicles = [];
   if(formRef.value) formRef.value.resetValidation();
 };
@@ -248,6 +291,18 @@ const removeVehicleField = (index: number) => {
   form.vehicles.splice(index, 1);
 };
 
+// Validation helpers
+const upperCaseGST = (val: Event) => {
+   const input = val.target as HTMLInputElement;
+   form.gstNumber = input.value.toUpperCase();
+};
+
+
+const upperCaseVehicle = (index: number, val: Event) => {
+   const input = val.target as HTMLInputElement;
+   form.vehicles[index] = input.value.toUpperCase();
+};
+
 const saveDealer = async () => {
   const { valid: isValid } = await formRef.value?.validate();
   if (!isValid) return;
@@ -256,10 +311,12 @@ const saveDealer = async () => {
   const cleanedVehicles = form.vehicles.map(v => v.trim()).filter(v => v !== '');
 
   const dealerData = {
+      title: form.title,
       dealerName: form.dealerName,
       firmName: form.firmName,
       mobile: form.mobile,
       gstNumber: form.gstNumber,
+      address: form.address,
       vehicles: cleanedVehicles
   };
 
