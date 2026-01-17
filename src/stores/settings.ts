@@ -61,6 +61,37 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('showWeather', String(showWeather.value));
   }
 
+  // Company Profile
+  const companyProfile = ref({
+    name: 'BHOLA GUPTA & SONS',
+    address: 'Sector-6, Nanak Nagar, Jammu.',
+    gst: '01BDWPG7660J1Z7',
+    mobile: '9419656911',
+    bankName: 'J&K Bank Gangyal, Jammu',
+    accountNo: '0116010100001524',
+    ifsc: 'JAKA0GANGYAL',
+    branch: 'Gangyal',
+    terms: [
+      'Goods once sold can not be returned.',
+      'Warranty is the responsibility of Company for services.',
+      'E. & O.E.'
+    ]
+  });
+
+  function updateCompanyProfile(profile: any) {
+    companyProfile.value = { ...companyProfile.value, ...profile };
+    // In a real app, we'd persist this to backend or localStorage
+    localStorage.setItem('companyProfile', JSON.stringify(companyProfile.value));
+  }
+  
+  // Try to load from storage
+  const savedProfile = localStorage.getItem('companyProfile');
+  if(savedProfile) {
+    try {
+        companyProfile.value = { ...companyProfile.value, ...JSON.parse(savedProfile) };
+    } catch(e) { console.error("Failed to parse saved profile", e); }
+  }
+
   function formatCurrency(value: number) {
     return new Intl.NumberFormat(currencyLocale.value, {
       style: 'currency',
@@ -81,5 +112,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setLanguage,
     setPrimaryColor,
     toggleWeather,
+    companyProfile,
+    updateCompanyProfile
   };
 });

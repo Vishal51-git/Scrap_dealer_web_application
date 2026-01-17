@@ -14,14 +14,14 @@
     <v-text-field
       v-model="billingStore.searchQuery"
       prepend-inner-icon="mdi-magnify"
-      :label="$t('billing.search_placeholder')"
+      :label="$t('billing_history.search_placeholder')"
       variant="outlined"
       class="mb-6 rounded-lg bg-surface"
       hide-details
     ></v-text-field>
 
     <v-row>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="4">
         <v-card class="rounded-xl pa-3" elevation="0" border>
           <v-avatar color="blue-lighten-5" rounded="lg" size="36" class="mb-2">
             <v-icon color="primary" size="20">mdi-cash</v-icon>
@@ -30,8 +30,8 @@
           <div class="text-subtitle-1 font-weight-bold">{{ settings.formatCurrency(stats.paidToday) }}</div>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="6">
-        <v-card class="rounded-xl pa-3" elevation="0">
+      <v-col cols="12" sm="4">
+        <v-card class="rounded-xl pa-3" elevation="0" border>
           <v-avatar color="orange-lighten-5" rounded="lg" size="36" class="mb-2">
             <v-icon color="warning" size="20">mdi-clock-outline</v-icon>
           </v-avatar>
@@ -39,13 +39,22 @@
           <div class="text-subtitle-1 font-weight-bold">{{ stats.pending }}</div>
         </v-card>
       </v-col>
+      <v-col cols="12" sm="4">
+        <v-card class="rounded-xl pa-3" elevation="0" border>
+          <v-avatar color="grey-lighten-3" rounded="lg" size="36" class="mb-2">
+            <v-icon color="grey-darken-1" size="20">mdi-file-document-edit-outline</v-icon>
+          </v-avatar>
+          <div class="text-caption text-medium-emphasis">{{ $t('billing_history.draft_invoices') }}</div>
+          <div class="text-subtitle-1 font-weight-bold">{{ stats.drafts }}</div>
+        </v-card>
+      </v-col>
     </v-row>
 
     <!-- Reports Button -->
-    <v-btn block color="primary" class="text-none my-4 rounded-lg" size="large" prepend-icon="mdi-file-document-outline">
+    <v-btn block color="primary" class="text-none my-4 rounded-lg" size="large" prepend-icon="mdi-file-document-outline" to="/reports">
       {{ $t('billing_history.reports_analytics') }}
       <template v-slot:append>
-        <v-icon>mdi-chevron-down</v-icon>
+        <v-icon>mdi-chevron-right</v-icon>
       </template>
     </v-btn>
 
@@ -70,6 +79,13 @@
         class="bg-surface"
         @click="setFilter('Pending')"
       >Pending</v-chip>
+
+      <v-chip 
+        :color="filterType === 'Draft' ? 'primary' : undefined" 
+        :variant="filterType === 'Draft' ? 'flat' : 'outlined'" 
+        class="bg-surface"
+        @click="setFilter('Draft')"
+      >{{ $t('billing_history.filters.draft') }}</v-chip>
     </div>
 
     <!-- Grouped List -->
@@ -97,7 +113,7 @@
                 {{ item.subtitle }} <br>
                 {{ item.details }}
               </div>
-              <v-chip size="x-small" :color="item.status === 'Paid' ? 'success' : 'warning'" variant="flat">
+              <v-chip size="x-small" :color="item.status === 'Paid' ? 'success' : (item.status === 'Draft' ? 'grey' : 'warning')" variant="flat">
                 {{ item.status }}
               </v-chip>
             </div>
@@ -106,7 +122,7 @@
           <!-- Actions -->
           <div class="d-flex flex-column ml-2 border-s pl-2">
             <v-btn icon="mdi-eye" size="x-small" variant="text" color="primary" @click="viewBill(item.id)"></v-btn>
-            <v-btn icon="mdi-pencil" size="x-small" variant="text" color="grey" @click="editBill(item.id)"></v-btn>
+            <v-btn v-if="item.status !== 'Draft'" icon="mdi-pencil" size="x-small" variant="text" color="grey" @click="editBill(item.id)"></v-btn>
             <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="deleteBill(item.id)"></v-btn>
           </div>
         </div>
@@ -139,7 +155,7 @@
                 </div>
                  <div class="text-right">
                     <div class="text-caption text-medium-emphasis">Status</div>
-                     <v-chip size="x-small" :color="selectedBill.status === 'Paid' ? 'success' : 'warning'" variant="flat">
+                    <v-chip size="x-small" :color="selectedBill.status === 'Paid' ? 'success' : (selectedBill.status === 'Draft' ? 'grey' : 'warning')" variant="flat">
                         {{ selectedBill.status || 'Paid' }}
                     </v-chip>
                 </div>
@@ -171,7 +187,7 @@
             </div>
 
         </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
+        <v-card-actions class="pa-4 pt-0" v-if="selectedBill.status !== 'Draft'">
             <v-btn variant="outlined" color="primary" class="flex-grow-1" prepend-icon="mdi-printer" @click="printBill">Print</v-btn>
             <v-btn variant="flat" color="primary" class="flex-grow-1" prepend-icon="mdi-file-pdf-box" @click="downloadPDF">Export PDF</v-btn>
         </v-card-actions>
@@ -213,12 +229,17 @@ const snackbar = useSnackbarStore();
 
 
 const searchQuery = ref('');
+
+
+
+// Filter
 const filterType = ref('All');
 
 const stats = computed(() => {
     const today = new Date().toDateString();
     let paidToday = 0;
     let pending = 0;
+    let drafts = 0;
     
     billingStore.history.forEach(entry => {
         const entryDate = new Date(entry.date).toDateString();
@@ -228,9 +249,12 @@ const stats = computed(() => {
         if (entry.status === 'Pending') {
             pending++;
         }
+        if (entry.status === 'Draft') {
+            drafts++;
+        }
     });
 
-    return { paidToday, pending };
+    return { paidToday, pending, drafts };
 });
 
 const setFilter = (type: string) => {
@@ -240,9 +264,13 @@ const setFilter = (type: string) => {
 
 
 const editBill = (id: string) => {
-    // Navigate to New Billing with ID query param
+    // Check type of bill
+    const entry = billingStore.getEntryById(id);
+    const path = (entry && entry.status === 'Draft') ? '/billing/generate' : '/billing/new';
+    
+    // Navigate with ID query param
     import('../router').then(({ default: router }) => {
-        router.push({ path: '/billing/new', query: { id } });
+        router.push({ path, query: { id } });
     });
 };
 
@@ -343,6 +371,8 @@ const filteredEntries = computed(() => {
             entries = entries.filter(e => e.status === 'Pending');
         } else if (filterType.value === 'Paid') {
             entries = entries.filter(e => e.status === 'Paid');
+        } else if (filterType.value === 'Draft') {
+            entries = entries.filter(e => e.status === 'Draft');
         }
     }
     

@@ -308,8 +308,8 @@ onMounted(() => {
             billingItems.value = entry.items.map(item => ({
                 id: Math.random(), // generate temporary UI id
                 inventoryItemId: item.inventoryItemId,
-                grossWeight: item.grossWeight,
-                tareWeight: item.tareWeight
+                grossWeight: item.grossWeight ?? null,
+                tareWeight: item.tareWeight ?? null
             }));
             if (billingItems.value.length > 1) {
                 isMultiItemMode.value = true;
@@ -376,6 +376,7 @@ const generateBill = () => {
             grossWeight: i.grossWeight!,
             tareWeight: i.tareWeight!,
             netWeight: netWeight,
+            qty: netWeight,
             price: price,
             total: netWeight * price
         };

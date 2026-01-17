@@ -13,3 +13,5 @@ All new pages and features must include **Internationalization (i18n)** support.
 ### 2. Theme Support
 
 All new pages and features must support **Theming (Dark/Light mode)**. Ensure UI components adapt correctly to the active theme settings without manual overrides that break theme switching.
+
+<!-- In same if Draft restrict delete till one month from the date to creation, till that time restrict it to delete -->

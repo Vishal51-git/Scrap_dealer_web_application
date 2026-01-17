@@ -4,11 +4,13 @@ import { ref, computed } from 'vue';
 export interface Dealer {
   id: string;
   userId: string; // Added userId
+  title?: string; // Added title
   dealerName: string;
   firmName: string;
   mobile?: string;
   gstNumber: string;
   vehicles: string[];
+  address?: string; // Added to support billing address
 }
 
 import { useAuthStore } from './auth';
